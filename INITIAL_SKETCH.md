@@ -103,3 +103,32 @@ var tasks = new TaskConsumer(connection, {
 tasks.on('error', '...');
 
 ```
+## Publishing to exchanges [3]
+
+The primary intended use for this framework is a worker queue model as
+such we need to publish in a way that gives us the best possible
+guarantee of delivery. Rabbit has [confirm](http://www.rabbitmq.com/confirms.html) channels just for this
+usecase.
+
+```js
+// build our publisher
+
+var Exchange = require('amqp/exchange');
+var exchange = new Exchange(connection, 'exchangeName');
+
+exchange.publish(
+  'routing', new Buffer('...'), {}
+).then(
+  function() {
+    // ack
+  },
+  function() {
+    // nack
+  }
+);
+
+exchange.on('error', function() {
+  // channel error
+});
+
+```
