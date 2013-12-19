@@ -18,22 +18,18 @@ var Schema = require('amqp-schema');
 
 module.exports = Schema.create({
   // by default exchanges are direct
-  exchanges: {
-    'tasks': { type: 'direct' }
-  },
-  queues: {
-    'request': {
-      durable: true,
-      bind: [
-        { source: 'tasks', pattern: 'request' }
-      ]
-    },
-    response: {
-      bind: [
-        { source: 'tasks', pattern: 'response' }
-      ]
-    }
-  }
+  exchanges: [
+    ['tasks', 'direct', {}]
+  ]
+  queues: [
+    ['request', { durable: true }]
+    ['response', { durable: true }]
+  ],
+
+  bind: [
+    ['request', 'tasks', 'request'],
+    ['response', 'tasks', 'response'],
+  ]
 });
 ```
 

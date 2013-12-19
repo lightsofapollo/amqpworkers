@@ -1,0 +1,14 @@
+{
+
+  "exchanges": [
+    ["tasks", "direct"],
+  ],
+
+  "queues": [
+    ["queue", { "durable": true }]
+  ],
+
+  "binds": [
+    ["queue", "task", "queue"]
+  ]
+}

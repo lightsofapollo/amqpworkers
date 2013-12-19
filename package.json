@@ -1,0 +1,27 @@
+{
+  "name": "amqpworkers",
+  "version": "0.0.0",
+  "description": "amqpworkers ===========",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/lightsofapollo/amqpworkers.git"
+  },
+  "author": "",
+  "license": "BSD-2-Clause",
+  "bugs": {
+    "url": "https://github.com/lightsofapollo/amqpworkers/issues"
+  },
+  "devDependencies": {
+    "mocha": "~1.15.1",
+    "blanket": "~1.1.5",
+    "amqplib": "~0.1.1",
+    "mocha-as-promised": "~2.0.0"
+  },
+  "dependencies": {
+    "then": "0.0.1"
+  }
+}
