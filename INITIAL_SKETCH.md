@@ -130,6 +130,11 @@ function TaskExchange() {
 TaskExchange.prototype = {
   __proto__: Exchange.prototype,
 
+  /**
+  We always use the same exchange name for this.
+  */
+  exchange: 'exchangeName',
+
   request: function(task) {
     return this.publish('request', new JSONMessage(task));
   },
@@ -139,7 +144,7 @@ TaskExchange.prototype = {
   }
 }
 
-var exchange = new TaskExchange(connection, 'exchangeName');
+var exchange = new TaskExchange(connection);
 
 exchange.request({ task: 'woot' }).then(
   function() { /* ack */ },
