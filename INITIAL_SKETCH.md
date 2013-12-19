@@ -111,24 +111,47 @@ guarantee of delivery. Rabbit has [confirm](http://www.rabbitmq.com/confirms.htm
 usecase.
 
 ```js
-// build our publisher
-
 var Exchange = require('amqp/exchange');
-var exchange = new Exchange(connection, 'exchangeName');
+var Message = require('amqp/message');
 
-exchange.publish(
-  'routing', new Buffer('...'), {}
-).then(
-  function() {
-    // ack
+Message.prototype.encoders = {
+  'application/json': function() {}
+};
+
+var JSONMessage = Message.create({
+  contentType: 'application/json',
+  persistent: true
+});
+
+function TaskExchange() {
+  Exchange.apply(this, arguments);
+}
+
+TaskExchange.prototype = {
+  __proto__: Exchange.prototype,
+
+  request: function(task) {
+    return this.publish('request', new JSONMessage(task));
   },
-  function() {
-    // nack
+
+  response: function(result) {
+    return this.publish('response', new JSONMessage(result));
   }
+}
+
+var exchange = new TaskExchange(connection, 'exchangeName');
+
+exchange.request({ task: 'woot' }).then(
+  function() { /* ack */ },
+  function() { /* nack */ }
+);
+
+exchange.response({ task: 'woot' }).then(
+  function() { /* ack */ },
+  function() { /* nack */ }
 );
 
 exchange.on('error', function() {
   // channel error
 });
-
 ```
