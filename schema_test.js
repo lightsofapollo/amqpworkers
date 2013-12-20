@@ -13,7 +13,7 @@ suite('amqp/schema', function() {
     return amqp.connect().then(
       function(_con) {
         connection = _con;
-        return connection.createChannel();
+        return connection.createConfirmChannel();
       }
     ).then(
       function(_chan) {
@@ -81,6 +81,37 @@ suite('amqp/schema', function() {
         if (!msg) return;
         assert.equal(msg.content.toString(), buffer.toString());
         done();
+      });
+    });
+  });
+
+  suite('#purge', function() {
+    setup(function() {
+      return subject.define(connection);
+    });
+
+    teardown(function() {
+      return subject.destroy(connection);
+    });
+
+    // append to the queue
+    setup(function(done) {
+      channel.publish(
+        EXCHANGE,
+        QUEUE,
+        new Buffer('xxx'),
+        {},
+        done
+      );
+    });
+
+    setup(function() {
+      return subject.purge(connection);
+    });
+
+    test('removes messages', function(done) {
+      return channel.assertQueue(QUEUE).then(function(queue) {
+        assert.equal(queue.messageCount, 0);
       });
     });
   });

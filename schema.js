@@ -81,6 +81,7 @@ Schema.prototype = {
   binds: null,
 
   exchangeNames: namesOf('exchanges'),
+
   queueNames: namesOf('queues'),
 
   define: function(connection) {
@@ -139,6 +140,29 @@ Schema.prototype = {
   },
 
   purge: function(connection) {
+    var queues = this.queueNames();
+
+    return new Promise(function(accept, reject) {
+      connection.createChannel().then(
+        function(channel) {
+          channel.once('error', reject);
+
+          var promises = queues.map(function(queue) {
+            return channel.purgeQueue(queue);
+          });
+
+          return Promise.all(promises).then(
+            function() {
+              channel.removeListener('error', reject);
+              return channel.close();
+            }
+          );
+        }
+      ).then(
+        accept,
+        reject
+      );
+    });
   }
 };
 
