@@ -1,14 +1,88 @@
 suite('amqp/schema', function() {
-  var amqplib = require('amqplib');
-  var schema = require('./schema');
+  var Schema = require('./schema'),
+      Promise = require('promise');
 
-  var connection;
-  setup(function(done) {
-    return amqplib.connect().then(function(_conn) {
-      connection = _conn;
+  var amqp = require('amqplib');
+  var schemaConfig = require('./examples/schema.json');
+  var subject = new Schema(schemaConfig);
+
+  var channel,
+      connection;
+
+  setup(function() {
+    return amqp.connect().then(
+      function(_con) {
+        connection = _con;
+        return connection.createChannel();
+      }
+    ).then(
+      function(_chan) {
+        return channel = _chan;
+      }
+    );
+  });
+
+  var EXCHANGE = schemaConfig.exchanges[0][0],
+      QUEUE = schemaConfig.queues[0][0];
+
+  suite('#destroy', function() {
+    setup(function() {
+      // create some related thing
+      return Promise.all([
+        channel.assertExchange(EXCHANGE, 'direct'),
+        channel.assertQueue(QUEUE)
+      ]);
+    });
+
+    setup(function() {
+      return subject.destroy(connection);
+    });
+
+    test('exchange is removed', function(done) {
+      channel.once('error', function(err) {
+        assert.ok(err.message.match(EXCHANGE));
+        assert.ok(err.message.match(/404/));
+        done();
+      });
+
+      channel.checkExchange(EXCHANGE);
+    });
+
+    test('queue is removed', function(done) {
+      channel.once('error', function(err) {
+        assert.ok(err.message.match(QUEUE));
+        assert.ok(err.message.match(/404/));
+        done();
+      });
+
+      channel.checkQueue(QUEUE);
     });
   });
 
-  test('do stuff', function() {
+  suite('#define', function() {
+    setup(function() {
+      return subject.define(connection);
+    });
+
+    teardown(function() {
+      subject.destroy(connection);
+    });
+
+    test('pubsub', function(done) {
+      var buffer = new Buffer('xxx');
+
+      // publish to exchange
+      var pub = channel.publish(
+        EXCHANGE, QUEUE, buffer
+      );
+
+      // attempt the consume
+      channel.consume(QUEUE, function(msg) {
+        if (!msg) return;
+        assert.equal(msg.content.toString(), buffer.toString());
+        done();
+      });
+    });
   });
+
 });

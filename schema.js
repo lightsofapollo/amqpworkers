@@ -1,10 +1,72 @@
-var Promise = require('then');
+var Promise = require('promise');
+var debug = require('debug')('amqpworker:schema');
 
-// map objects into a parallel set of promises.
-function mapThenThunk(array, handler) {
+function namesOf(property) {
   return function() {
-    return Promise.all(array.map(handler));
+    if (!this[property]) return [];
+
+    return this[property].map(function(value) {
+      return value[0];
+    });
   };
+}
+
+function defineExchangesAndQueues(schema, channel) {
+  return new Promise(function(accept, reject) {
+    // handle channel errors while this is running.
+    channel.once('error', reject);
+
+    // if there are no exchanges or queues this empty array is still fine.
+    var promises = [];
+
+    if (schema.exchanges) {
+      schema.exchanges.forEach(function(exchange) {
+        debug('create exchange', exchange);
+        promises.push(channel.assertExchange.apply(channel, exchange));
+      });
+    }
+
+
+    if (schema.queues) {
+      schema.queues.forEach(function(queue) {
+        debug('create queue', queue);
+        promises.push(channel.assertQueue.apply(channel, queue));
+      });
+    }
+
+    Promise.all(promises).then(
+      function() {
+        // remove rejection listener since its someone else's problem now.
+        channel.removeListener('error', reject);
+
+        // pass through the channel for the next consumer
+        return accept(channel);
+      },
+      reject
+    );
+  });
+}
+
+function bindQueues(schema, channel) {
+  return new Promise(function(accept, reject) {
+    channel.once('error', reject);
+
+    var promises = [];
+
+    schema.binds.forEach(function(bind) {
+      debug('bind queue', bind);
+      promises.push(channel.bindQueue.apply(channel, bind));
+    });
+
+    Promise.all(promises).then(
+      function() {
+        // same deal pass through on success.
+        channel.removeListener('error', reject);
+        return accept(channel);
+      },
+      reject
+    );
+  });
 }
 
 function Schema(schema) {
@@ -18,56 +80,62 @@ Schema.prototype = {
   queues: null,
   binds: null,
 
+  exchangeNames: namesOf('exchanges'),
+  queueNames: namesOf('queues'),
+
   define: function(connection) {
     return new Promise(function(accept, reject) {
-      var channel;
-
-      var promise = connection.createChannel();
-
-      // directly tie in the channel error to this promise.
-      promise.then(
-        function(_chan) { 
-          channel = _chan;
-          channel.once('error', reject);
-        }
+      // order is important
+      return connection.createChannel().then(
+        // exchanges and queues can be created in parallel
+        defineExchangesAndQueues.bind(this, this)
+      ).then(
+        // once the schema is defined we can then bind our exchange/queue information.
+        bindQueues.bind(this, this)
+      ).then(
+        // then finally we can close the channel
+        function(channel) { return channel.close(); }
+      ).then(
+        accept,
+        reject
       );
-
-      if (this.exchanges) {
-        promise.then(
-          mapThenThunk(this.exchanges, function() {
-            return channel.assertExchange.apply(channel, arguments);
-          })
-        );
-      }
-
-      if (this.queues) {
-        promise.then(
-          mapThenThunk(this.queues, function() {
-            return channel.assertQueue.apply(channel, arguments);
-          })
-        );
-      }
-
-      if (this.binds) {
-        promise.then(
-          mapThenThunk(this.binds, function() {
-            return channel.bindQueue.apply(channel, arguments);
-          })
-        );
-      }
-
-      // once our binds are complete we can close the channel.
-      promise.then(
-        function() {
-          return channel.close();
-        } 
-      );
-
-      promise.then(accept, reject);
-    });
+    }.bind(this));
   },
 
   destroy: function(connection) {
+    var exchanges = this.exchangeNames();
+    var queues = this.queueNames();
+
+    return new Promise(function(accept, reject) {
+      connection.createChannel().then(function(channel) {
+        // on channel error reject destroy
+        channel.once('error', reject);
+
+        // build up a list of promises to execute
+        var promises = [];
+
+        exchanges.forEach(function(exchange) {
+          debug('destroy exchange', exchange);
+          promises.push(channel.deleteExchange(exchange));
+        });
+
+        queues.forEach(function(queue) {
+          debug('destroy queue', queue);
+          promises.push(channel.deleteQueue(queue));
+        });
+
+        return Promise.all(promises).then(
+          function() {
+            channel.removeListener('error', reject);
+          }
+        ).then(
+          channel.close.bind(channel)
+        );
+      }).then(
+        accept,
+        reject
+      );
+    });
   },
 
   purge: function(connection) {

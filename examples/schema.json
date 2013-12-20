@@ -1,7 +1,6 @@
 {
-
   "exchanges": [
-    ["tasks", "direct"],
+    ["tasks", "direct"]
   ],
 
   "queues": [
@@ -9,6 +8,6 @@
   ],
 
   "binds": [
-    ["queue", "task", "queue"]
+    ["queue", "tasks", "queue"]
   ]
 }
