@@ -115,5 +115,4 @@ suite('amqp/schema', function() {
       });
     });
   });
-
 });
