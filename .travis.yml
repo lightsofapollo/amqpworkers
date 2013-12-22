@@ -1,0 +1,5 @@
+language: 
+script: make test
+node_js:
+  - "0.11"
+  - "0.10"
