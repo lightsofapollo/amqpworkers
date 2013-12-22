@@ -126,7 +126,8 @@ Consumer.prototype = {
       return debug('no-op message', message);
     }
 
-    // set the consumer flag from the message if its missing
+    // there is a race where handleConsume is fired prior to assigning
+    // the consumerTag so we handle that case here as well...
     if (!this.consumerTag) this.consumerTag = message.fields.consumerTag;
 
     // parse the message
