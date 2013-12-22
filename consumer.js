@@ -54,6 +54,8 @@ Consumer.prototype = {
   */
   consuming: false,
 
+  consumerTag: null,
+
   /**
   Begin consuming queue.
 
@@ -68,20 +70,37 @@ Consumer.prototype = {
     // initiate the consuming process
     this.consuming = true;
 
-    // open the channel.
-    var promise = this.connection.createChannel().then(
-      function (channel) {
-        this.channel = channel;
-      }.bind(this)
-    );
+    return new Promise(function(accept, reject) {
+      this.connection.createChannel().then(
 
-    // begin consuming!
-    promise.then(function() {
-      // this is not a promise
-      this.channel.consume(queue, this.handleConsume.bind(this));
+        // assign the channel for later
+        function (channel) {
+          this.channel = channel;
+        }.bind(this)
+
+      ).then(
+
+        // begin the consume
+        function() {
+          return this.channel.consume(
+            queue, 
+            this.handleConsume.bind(this)
+          );
+        }.bind(this)
+
+      ).then(
+
+        // save the consumer tag so we can cancel consumes
+        function(consumeResult) {
+          this.consumerTag = consumeResult.consumerTag;     
+        }.bind(this)
+
+      ).then(
+        accept,
+        reject
+      );
+
     }.bind(this));
-
-    return promise;
   },
 
   /**
@@ -91,6 +110,9 @@ Consumer.prototype = {
     if (!message) {
       return debug('no-op message', message);
     }
+
+    // set the consumer flag from the message if its missing
+    if (!this.consumerTag) this.consumerTag = message.fields.consumerTag;
 
     // parse the message
     var content = this.parseMessage(message);

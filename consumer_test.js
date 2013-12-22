@@ -29,7 +29,12 @@ suite('consumer', function() {
 
   // define schema
   setup(function() {
-    return Schema.define(connection);
+    return Schema.define(connection).then(
+      function() {
+        // ensure a clean state each test run
+        return Schema.purge(connection);
+      }
+    );
   });
 
   // then tear it down
@@ -41,9 +46,27 @@ suite('consumer', function() {
     subject = new Consumer(connection);
   });
 
+  function publish(object) {
+    // test helper for publish
+    return channel.publish(
+      EXCHANGE_NAME,
+      QUEUE_NAME,
+      new Buffer(JSON.stringify(object)),
+      { contentType: 'application/json' }
+    );
+  }
+
+  // helper which verifies we ack (or nack)
+  function readQueueUntil(count, done) {
+    channel.assertQueue(QUEUE_NAME).then(function(result) {
+      if (result.messageCount === count) done();
+    }, done);
+  }
+
   test('#consume', function() {
-    return subject.consume('my queue').then(
+    return subject.consume(QUEUE_NAME).then(
       function() {
+        assert.ok(subject.consumerTag);
         assert.ok(subject.consuming);
         assert.ok(subject.channel);
       }
@@ -51,7 +74,7 @@ suite('consumer', function() {
   });
 
   test('#close', function(done) {
-    subject.consume().then(
+    subject.consume(QUEUE_NAME).then(
       function() {
         subject.channel.once('close', done);
         subject.close();
@@ -60,16 +83,9 @@ suite('consumer', function() {
   });
 
   suite('#read', function() {
-    var object = { woot: true, a: [1, 2, 3] };
-    var objectBuffer = new Buffer(JSON.stringify(object));
-
-    function readQueueUntil(count, done) {
-      channel.assertQueue(QUEUE_NAME).then(function(result) {
-        if (result.messageCount === count) done();
-      }, done);
-    }
-
     test('ack', function(done) {
+      var object = { xfoo: true };
+
       subject.read = function(content, message) {
         return new Promise(function(accept, reject) {
           assert.deepEqual(content, object);
@@ -78,16 +94,37 @@ suite('consumer', function() {
         });
       };
 
-      channel.publish(
-        EXCHANGE_NAME,
-        QUEUE_NAME,
-        objectBuffer,
-        { contentType: 'application/json' }
-      );
+      // push object into queue
+      publish(object);
 
       // being consuming records
       subject.consume(QUEUE_NAME);
     });
-  });
 
+    test('nack', function(done) {
+      var ignore = false;
+      subject.read = function(content, message) {
+        return new Promise(function(accept, reject) {
+          if (ignore) return;
+
+          // run this only once
+          ignore = true;
+
+          // reject the message
+          reject();
+
+          // signal the cancellation of consumer
+          subject.channel.cancel(subject.consumerTag).then(
+            function() {
+              readQueueUntil(1, done); 
+            }
+          );
+        });
+      };
+
+      publish({ nackME: true });
+
+      subject.consume(QUEUE_NAME);
+    });
+  });
 });
