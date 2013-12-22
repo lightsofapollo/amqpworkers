@@ -149,7 +149,6 @@ suite('consumer', function() {
             }
 
             if (pending > 2) {
-              console.log('XXX WTFS');
               clearTimeout(timeout);
               done(new Error('received more then 2 reads concurrently'));
             }
