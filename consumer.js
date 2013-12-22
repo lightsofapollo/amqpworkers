@@ -23,10 +23,14 @@ function Consumer(connection, reader) {
 
   this.connection = connection;
   EventEmitter.call(this);
+
+  // bound single instance methods
+  this._boundEmitError = this.emit.bind(this, 'error');
+  this._boundEmitClose = this.emit.bind(this, 'close');
 }
 
 Consumer.prototype = {
-  __proto__: EventEmitter,
+  __proto__: EventEmitter.prototype,
 
   constructor: Consumer,
 
@@ -63,6 +67,16 @@ Consumer.prototype = {
   */
   consumerTag: null,
 
+  bindChannel: function(channel) {
+    channel.on('close', this._boundEmitClose);
+    channel.on('error', this._boundEmitError);
+  },
+
+  unbindChannel: function(channel) {
+    channel.removeListener('close', this._boundEmitClose);
+    channel.removeListener('error', this._boundEmitError);
+  },
+
   /**
   Begin consuming queue.
 
@@ -84,6 +98,7 @@ Consumer.prototype = {
         // assign the channel for later
         function (channel) {
           this.channel = channel;
+          this.bindChannel(channel);
         }.bind(this)
 
       ).then(
@@ -154,6 +169,7 @@ Consumer.prototype = {
     if (!this.consuming) return Promise.from(null);
     return this.channel.close().then(
       function() {
+        this.unbindChannel(this.channel);
         this.consuming = false;
         this.channel = null;
       }.bind(this)

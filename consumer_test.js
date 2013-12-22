@@ -158,6 +158,62 @@ suite('consumer', function() {
         subject.consume(QUEUE_NAME, { prefetch: 2 });
       });
     });
-
   });
+
+  suite('channel error handling', function() {
+    setup(function() {
+      subject.read = function () {};
+    });
+
+    test('close', function(done) {
+      subject.once('close', function() {
+        done();
+      });
+
+      subject.consume(QUEUE_NAME).then(
+        subject.close.bind(subject)
+      );
+    });
+
+    test('error', function(done) {
+      subject.once('error', done);
+      subject.consume(QUEUE_NAME).then(
+        function() {
+          subject.channel.emit('error');
+        }
+      );
+    });
+
+    test('unbind', function(done) {
+      function error() {
+        done(new Error('should not have emitted message'));
+      }
+      
+      var channel;
+      subject.consume(QUEUE_NAME).then(
+        function () {
+          channel = subject.channel;
+          return subject.close();
+        }
+      ).then(
+        function() {
+          // must come after .close otherwise we pick up on the .close
+          // event we actually want
+          subject.once('error', error);
+          subject.once('close', error);
+        }
+      ).then(
+        function() {
+          try {
+            channel.emit('error');
+            channel.emit('close');
+          } catch (e) {
+            /* swallow errors */
+          }
+          done();
+        }
+      );
+    });
+  });
+
 });
