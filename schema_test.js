@@ -3,7 +3,7 @@ suite('amqp/schema', function() {
       Promise = require('promise');
 
   var amqp = require('amqplib');
-  var schemaConfig = require('./examples/schema.json');
+  var schemaConfig = require('./examples/schema_config.json');
   var subject = new Schema(schemaConfig);
 
   var channel,
