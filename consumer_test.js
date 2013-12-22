@@ -87,11 +87,8 @@ suite('consumer', function() {
       var object = { xfoo: true };
 
       subject.read = function(content, message) {
-        return new Promise(function(accept, reject) {
-          assert.deepEqual(content, object);
-          accept();
-          readQueueUntil(0, done);
-        });
+        assert.deepEqual(content, object);
+        readQueueUntil(0, done);
       };
 
       // push object into queue
@@ -126,5 +123,42 @@ suite('consumer', function() {
 
       subject.consume(QUEUE_NAME);
     });
+
+    suite('prefetch', function() {
+      // publish three items
+      setup(function() {
+        var promises = [1, 2, 3].map(
+          function(value) {
+            return publish(value);
+          }
+        );
+
+        return Promise.all(promises);
+      });
+
+      test('consuming concurrency', function(done) {
+        var pending = 0;
+        var timeout;
+
+        subject.read = function() {
+          return new Promise(function() {
+            pending++;
+
+            if (pending === 2) {
+              timeout = setTimeout(done, 50, null);
+            }
+
+            if (pending > 2) {
+              console.log('XXX WTFS');
+              clearTimeout(timeout);
+              done(new Error('received more then 2 reads concurrently'));
+            }
+          });
+        };
+
+        subject.consume(QUEUE_NAME, { prefetch: 2 });
+      });
+    });
+
   });
 });

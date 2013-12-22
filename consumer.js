@@ -11,6 +11,10 @@ function binaryJSON(buffer) {
 }
 
 function channelOptions(channel, options) {
+  // no-op
+  if (!options.prefetch) return Promise.from(null);
+  debug('prefetch', options.prefetch);
+  return channel.prefetch(options.prefetch);
 }
 
 function Consumer(connection, reader) {
@@ -54,6 +58,9 @@ Consumer.prototype = {
   */
   consuming: false,
 
+  /**
+  AMQP consumer tag... Generally only useful for canceling consumption.
+  */
   consumerTag: null,
 
   /**
@@ -66,6 +73,7 @@ Consumer.prototype = {
   */
   consume: function(queue, options) {
     if (this.consuming) throw new Error('already consuming queue');
+    debug('consume', queue);
 
     // initiate the consuming process
     this.consuming = true;
@@ -76,6 +84,13 @@ Consumer.prototype = {
         // assign the channel for later
         function (channel) {
           this.channel = channel;
+        }.bind(this)
+
+      ).then(
+
+        // handle options
+        function() {
+          return channelOptions(this.channel, options);
         }.bind(this)
 
       ).then(
@@ -119,7 +134,7 @@ Consumer.prototype = {
     var channel = this.channel;
 
     // the magic! .read must return a promise.
-    this.read(content, message).then(
+    Promise.from(this.read(content, message)).then(
       function() {
         debug('ack', message.properties);
         // ack!
