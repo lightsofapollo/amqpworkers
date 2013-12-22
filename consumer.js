@@ -12,7 +12,7 @@ function binaryJSON(buffer) {
 
 function channelOptions(channel, options) {
   // no-op
-  if (!options.prefetch) return Promise.from(null);
+  if (!options || !options.prefetch) return Promise.from(null);
   debug('prefetch', options.prefetch);
   return channel.prefetch(options.prefetch);
 }
