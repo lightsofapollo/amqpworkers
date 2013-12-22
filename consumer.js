@@ -134,7 +134,6 @@ Consumer.prototype = {
     var content = this.parseMessage(message);
     var channel = this.channel;
 
-    // the magic! .read must return a promise.
     Promise.from(this.read(content, message)).then(
       function() {
         debug('ack', message.properties);
