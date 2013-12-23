@@ -17,20 +17,10 @@ function Message(content, options) {
     options.contentType = options.contentType || 'application/json';
   }
 
-  this.options = options;
-  this.buffer = buffer;
+  return {
+    options: options,
+    buffer: buffer
+  };
 }
-
-Message.prototype = {
-  /**
-  @type Object read by publishers and passed to #publish
-  */
-  options: null,
-
-  /**
-  @type Buffer passed to publish
-  */
-  buffer: null
-};
 
 module.exports = Message;
