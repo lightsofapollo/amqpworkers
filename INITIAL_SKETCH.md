@@ -107,47 +107,39 @@ guarantee of delivery. Rabbit has [confirm](http://www.rabbitmq.com/confirms.htm
 usecase.
 
 ```js
-var Exchange = require('amqp/exchange');
+var Publisher = require('amqp/publisher');
 var Message = require('amqp/message');
 
-Message.prototype.encoders = {
-  'application/json': function() {}
-};
-
-var JSONMessage = Message.create({
-  contentType: 'application/json',
-  persistent: true
-});
-
-function TaskExchange() {
-  Exchange.apply(this, arguments);
+function MyMessage(json) {
+  return {
+    buffer: jsonBuffer(json),
+    options: {
+      persistent: true,
+      contentType: 'application/json',
+      priority: 0,
+    }
+  };
 }
 
-TaskExchange.prototype = {
+function Tasks() {
+  Publisher.apply(this, arguments);
+}
+
+Tasks.prototype = {
   __proto__: Exchange.prototype,
 
-  /**
-  We always use the same exchange name for this.
-  */
-  exchange: 'exchangeName',
-
   request: function(task) {
-    return this.publish('request', new JSONMessage(task));
-  },
-
-  response: function(result) {
-    return this.publish('response', new JSONMessage(result));
+    return this.publish(
+      'exchangeName',
+      'request',
+      new MyMessage(task)
+    );
   }
 }
 
-var exchange = new TaskExchange(connection);
+var publisher = new Tasks(connection);
 
-exchange.request({ task: 'woot' }).then(
-  function() { /* ack */ },
-  function() { /* nack */ }
-);
-
-exchange.response({ task: 'woot' }).then(
+publisher.request({ task: 'woot' }).then(
   function() { /* ack */ },
   function() { /* nack */ }
 );
