@@ -67,6 +67,39 @@ AMQPSchema.purge(connection).then(
 
 ## Consumer
 
+A consumer is an object oriented approach to consuming queues.
+
+```js
+var Consumer = require('amqpworkers/consumer');
+
+// this is the result from amqplib.connect
+var connection;
+
+var consumer = new Consumer(queue);
+
+// Read will be called when an item is being consumed from the queue.
+consumer.read = function(content, message) {
+  // content is the parsed content of the message
+  // and message is un mutated value from amqplib
+
+
+  // the promise is optional but highly recommended if you care about
+  // ack / nack. When this promise is accepted an ack will be sent
+  // (and you guessed! nack when rejected).
+  return new Promise(function(accept, reject) {
+
+  });
+}
+consumer.consume('the queue name', {
+  // optional prefetch option
+  prefetch: 1
+});
+```
+
+The consumer has the parseMessage method which will be called prior
+to passing the result of that function and the message along to the
+.read method. This can be used as a hook for implementing other
+de-serializing protocols.
 
 ## Publisher
 

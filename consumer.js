@@ -47,6 +47,7 @@ Consumer.prototype = {
 
   /**
   Default message parsing
+  @protected
   */
   parseMessage: function(message) {
     if (message.properties.contentType !== JSONMime) {
@@ -67,11 +68,19 @@ Consumer.prototype = {
   */
   consumerTag: null,
 
+  /**
+  Handle binding channel events to consumer events.
+  @private
+  */
   bindChannel: function(channel) {
     channel.on('close', this._boundEmitClose);
     channel.on('error', this._boundEmitError);
   },
 
+  /**
+  Handle unbinding channel events to consumer events.
+  @private
+  */
   unbindChannel: function(channel) {
     channel.removeListener('close', this._boundEmitClose);
     channel.removeListener('error', this._boundEmitError);
@@ -135,6 +144,8 @@ Consumer.prototype = {
 
   /**
   Handle the "raw" consume notification and transform it into a promise for ack/nack.
+
+  @private
   */
   handleConsume: function(message) {
     if (!message) {
