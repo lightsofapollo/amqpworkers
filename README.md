@@ -67,7 +67,8 @@ AMQPSchema.purge(connection).then(
 
 ## Consumer
 
-A consumer is an object oriented approach to consuming queues.
+A consumer is an object oriented approach to consuming queues. They can
+be used directly by instantiating Consumer or via inheritance.
 
 ```js
 var Consumer = require('amqpworkers/consumer');
@@ -96,7 +97,7 @@ consumer.consume('the queue name', {
 });
 ```
 
-The consumer has the parseMessage method which will be called prior
+The consumer has the `parseMessage` method which will be called prior
 to passing the result of that function and the message along to the
 .read method. This can be used as a hook for implementing other
 de-serializing protocols.
