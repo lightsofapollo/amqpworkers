@@ -50,6 +50,8 @@ suite('publisher', function() {
     });
 
     test('consume message', function(done) {
+      var messageCount = 0;
+
       var consume = new Consumer(connection, function(content, message) {
         // verify round trip encoding
         assert.deepEqual(content, object);
@@ -60,10 +62,18 @@ suite('publisher', function() {
           message.properties.messageId
         );
 
-        done();
+        // send another message after the first
+        messageCount++;
+        // after we process the first send the second
+        if (messageCount === 1) subject.publish(EXCHANGE, QUEUE, published);
+        // yey- this works in both no channel mode and with a channel
+        if (messageCount === 2) done();
       });
 
       consume.consume(QUEUE);
+    });
+
+    test('second publish', function() {
     });
   });
 });
