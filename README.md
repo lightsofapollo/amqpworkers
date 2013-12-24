@@ -11,10 +11,10 @@ The primary export is build out of four smaller modules (and while you
 can use the top level export using the longer form is probably what you
 want).
 
-#### Schema
-#### Consumer
-#### Publisher
-#### Message
+- [Schema](#schema)
+- [Consumer](#consumer)
+- [Publisher](#publisher)
+- [Message](#message)
 
 
 ## Schema
