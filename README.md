@@ -13,8 +13,8 @@ want).
 
 - [Schema](#schema)
 - [Consumer](#consumer)
-- [Publisher](#publisher)
 - [Message](#message)
+- [Publisher](#publisher)
 
 
 ## Schema
@@ -102,7 +102,35 @@ to passing the result of that function and the message along to the
 .read method. This can be used as a hook for implementing other
 de-serializing protocols.
 
-## Publisher
-
-
 ## Message
+
+A message is a simple representation of an _outbound_ (to be published)
+message. Inbound messages are not represented by these.
+
+Messages are simply any object with a `.buffer [Buffer]` property and an `.options [Object]` property.
+The provided object will parse objects into json blobs
+`(new Buffer(JSON.stringify(obj))` and stamp them with `contentType`
+`application/json`
+
+```js
+var Message = require('amqp/message');
+
+var myMsg = new Message(
+  // will be converted into a buffer
+  { woot: true },
+
+  // see amqplib #publish options
+  { persistent: true }
+);
+
+// json blob
+myMsg.buffer;
+
+// application/json
+myMsg.options.contentType;
+```
+
+Messages are only useful in conjunction with [Publishers](#publisher)
+#publish method.
+
+## Publisher
