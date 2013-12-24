@@ -66,7 +66,16 @@ Publisher.prototype = {
     );
   },
 
-  publish: publishPending
+  publish: publishPending,
+
+  close: function() {
+    if (!this.channel) return Promise.from(null);
+    return this.channel.close().then(
+      function() {
+        this.channel = null;
+      }.bind(this)
+    );
+  }
 };
 
 module.exports = Publisher;

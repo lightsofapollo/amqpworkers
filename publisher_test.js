@@ -72,8 +72,26 @@ suite('publisher', function() {
 
       consume.consume(QUEUE);
     });
+  });
 
-    test('second publish', function() {
+  suite('#close', function() {
+    test('without a channel', function(done) {
+      return subject.close();
+    });
+
+    suite('with a channel', function() {
+      setup(function(done) {
+        return subject.openChannel();
+      });
+
+      test('close', function(done) {
+        assert.ok(subject.channel);
+        return subject.close().then(
+          function() {
+            assert.ok(!subject.channel, 'channel is unset');
+          }
+        );
+      });
     });
   });
 });
