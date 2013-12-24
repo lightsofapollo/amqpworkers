@@ -105,7 +105,7 @@ de-serializing protocols.
 ## Message
 
 A message is a simple representation of an _outbound_ (to be published)
-message. Inbound messages are not represented by these.
+message.
 
 Messages are simply any object with a `.buffer [Buffer]` property and an `.options [Object]` property.
 The provided object will parse objects into json blobs
