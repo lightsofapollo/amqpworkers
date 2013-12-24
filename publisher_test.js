@@ -94,4 +94,44 @@ suite('publisher', function() {
       });
     });
   });
+
+  suite('channel event proxying', function() {
+
+    // trigger the bind
+    setup(function() {
+      return subject.openChannel();
+    });
+
+    test('error', function(done) {
+      subject.once('error', done);
+      subject.channel.emit('error');
+    });
+
+    test('close', function(done) {
+      subject.once('error', done);
+      subject.channel.emit('error');
+    });
+
+    test('unbind', function(done) {
+      function error() {
+        done(new Error('should not call emitter'));
+      }
+
+      subject.once('error', error);
+      var channel = subject.channel;
+
+      subject.close().then(
+        function() {
+
+          // swallow the error on emit error.
+          try {
+            channel.emit('error');
+          } catch (e) {
+          }
+
+          done();
+        }
+      );
+    });
+  });
 });

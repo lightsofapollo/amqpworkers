@@ -1,4 +1,5 @@
-var Promise = require('promise');
+var Promise = require('promise'),
+    EventEmitter = require('events').EventEmitter;
 
 function publishPending(exchange, route, message) {
   var channelPromise = this.openChannel();
@@ -33,11 +34,28 @@ function publishReady(exchange, route, message) {
 
 function Publisher(connection) {
   this.connection = connection;
+
+  EventEmitter.call(this);
+
+  this._boundEmitError = this.emit.bind(this, 'error');
+  this._boundEmitClose = this.emit.bind(this, 'close');
 }
 
 Publisher.prototype = {
+  __proto__: EventEmitter.prototype,
+
   channel: null,
   connection: null,
+
+  bindChannel: function(channel) {
+    channel.on('error', this._boundEmitError);
+    channel.on('close', this._boundEmitClose);
+  },
+
+  unbindChannel: function(channel) {
+    channel.removeListener('error', this._boundEmitError);
+    channel.removeListener('close', this._boundEmitClose);
+  },
 
   /**
   Begin opening the channel for publishing.
@@ -62,6 +80,9 @@ Publisher.prototype = {
 
         // now we are ready to publish stuff on the channel!
         this.channel = channel;
+
+        // setup event proxying
+        this.bindChannel(channel);
       }.bind(this)
     );
   },
@@ -72,6 +93,8 @@ Publisher.prototype = {
     if (!this.channel) return Promise.from(null);
     return this.channel.close().then(
       function() {
+        // get rid of all channel associations
+        this.unbindChannel(this.channel);
         this.channel = null;
       }.bind(this)
     );
