@@ -170,5 +170,3 @@ tasks.publish(
 // cleanup when your done
 tasks.close();
 ```
-
-
