@@ -45,6 +45,9 @@ will fail if the queue/exchange does not exist in earlier versions.
 
 var AMQPSchema = require('./my_schema');
 
+// this is the result from amqplib.connect
+var connection;
+
 AMQPSchema.define(connection).then(
  //
 );
