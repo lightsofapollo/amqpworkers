@@ -131,6 +131,6 @@ myMsg.options.contentType;
 ```
 
 Messages are only useful in conjunction with [Publishers](#publisher)
-#publish method.
+`#publish method`.
 
 ## Publisher
