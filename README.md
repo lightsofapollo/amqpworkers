@@ -95,6 +95,9 @@ consumer.consume('the queue name', {
   // optional prefetch option
   prefetch: 1
 });
+
+// cleanup when your done
+consumer.close();
 ```
 
 The consumer has the `parseMessage` method which will be called prior
@@ -134,3 +137,38 @@ Messages are only useful in conjunction with [Publishers](#publisher)
 `#publish` method.
 
 ## Publisher
+
+Publishers are fairly simple wrappers around #publish and confirm
+channels. The assumption is that every message is critical and slowing
+down the publishing process to confirm writes is more important then
+raw speed.
+
+```js
+var Publisher = require('amqpworker/publisher'),
+    Message = require('amqpworker/message');
+
+// from amqplib #connect
+var connection;
+
+var tasks = new Publisher(connection);
+
+// publish something to the task exchange
+
+tasks.publish(
+  'tasks', // exchange name
+  'request', // routing key
+  new Message({ woot: true }, { persistent: true })
+).then(
+  function() {
+    // confirmed  
+  },
+  function() {
+    // rejected
+  }
+);
+
+// cleanup when your done
+tasks.close();
+```
+
+
