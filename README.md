@@ -133,7 +133,7 @@ myMsg.buffer;
 myMsg.options.contentType;
 ```
 
-Messages are only useful in conjunction with [Publishers](#publisher)
+Messages are only useful in conjunction with [Publisher's](#publisher)
 `#publish` method.
 
 ## Publisher
