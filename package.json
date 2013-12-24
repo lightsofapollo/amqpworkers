@@ -11,7 +11,7 @@
     "url": "git://github.com/lightsofapollo/amqpworkers.git"
   },
   "author": "James Lal [:lightsofapollo]",
-  "license": "Apache2",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/lightsofapollo/amqpworkers/issues"
   },
