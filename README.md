@@ -76,7 +76,7 @@ var Consumer = require('amqpworkers/consumer');
 // this is the result from amqplib.connect
 var connection;
 
-var consumer = new Consumer(queue);
+var consumer = new Consumer(connection);
 
 // Read will be called when an item is being consumed from the queue.
 consumer.read = function(content, message) {
