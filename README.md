@@ -144,8 +144,8 @@ down the publishing process to confirm writes is more important then
 raw speed.
 
 ```js
-var Publisher = require('amqpworker/publisher'),
-    Message = require('amqpworker/message');
+var Publisher = require('amqpworkers/publisher'),
+    Message = require('amqpworkers/message');
 
 // from amqplib #connect
 var connection;
